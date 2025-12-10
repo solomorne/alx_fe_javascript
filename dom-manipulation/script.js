@@ -115,6 +115,10 @@ function addQuote() {
     category: quoteCategory
   });
 
+  // ✅ Update categories when a new quote is added
+  populateCategories();
+
+
   document.getElementById("newQuoteText").value = "";
   document.getElementById("newQuoteCategory").value = "";
 
@@ -265,3 +269,82 @@ loadQuotes();
 
 // Restore last viewed quote if present in sessionStorage
 restoreLastViewedQuote();
+
+
+// ===============================
+// Populate Categories (REQUIRED)
+// ===============================
+function populateCategories() {
+  const select = document.getElementById("categoryFilter");
+  if (!select) return;
+
+  const currentValue = select.value;
+
+  // Clear existing options except "All"
+  select.innerHTML = `<option value="all">All Categories</option>`;
+
+  const uniqueCategories = [...new Set(quotes.map(q => q.category))];
+
+  uniqueCategories.forEach(category => {
+    const option = document.createElement("option");
+    option.value = category;
+    option.textContent = category;
+    select.appendChild(option);
+  });
+
+  // Restore previously selected filter if available
+  const savedFilter = localStorage.getItem("selectedCategory");
+  if (savedFilter) {
+    select.value = savedFilter;
+  } else {
+    select.value = currentValue || "all";
+  }
+}
+
+// ===============================
+// Filter Quotes (REQUIRED)
+// ===============================
+function filterQuotes() {
+  const select = document.getElementById("categoryFilter");
+  const selectedCategory = select.value;
+
+  // Persist selected filter
+  localStorage.setItem("selectedCategory", selectedCategory);
+
+  let filteredQuotes = quotes;
+
+  if (selectedCategory !== "all") {
+    filteredQuotes = quotes.filter(
+      quote => quote.category === selectedCategory
+    );
+  }
+
+  if (filteredQuotes.length === 0) {
+    quoteDisplay.innerHTML = "<p>No quotes found for this category.</p>";
+    return;
+  }
+
+  const randomIndex = Math.floor(Math.random() * filteredQuotes.length);
+  const quote = filteredQuotes[randomIndex];
+
+  quoteDisplay.innerHTML = `
+    <p>"${quote.text}"</p>
+    <strong>— ${quote.category}</strong>
+  `;
+}
+
+
+// ===============================
+// Initialize Category Filter
+// ===============================
+populateCategories();
+
+// Restore last selected category filter on load
+const savedCategory = localStorage.getItem("selectedCategory");
+if (savedCategory) {
+  const select = document.getElementById("categoryFilter");
+  if (select) {
+    select.value = savedCategory;
+    filterQuotes();
+  }
+}
