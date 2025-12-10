@@ -488,6 +488,12 @@ function manualSync() {
   syncWithServer();
 }
 
+function manualSync() {
+  notifySync("Manual sync started...");
+  syncQuotes();
+}
+
+
 // ===============================
 // View Possible Conflicts
 // ===============================
@@ -519,5 +525,47 @@ async function sendQuotesToServer(quotesToSend) {
   } catch (error) {
     console.error("Failed to send quotes to server:", error);
     return null;
+  }
+}
+
+// ===============================
+// Sync Quotes (REQUIRED)
+// ===============================
+async function syncQuotes() {
+  try {
+    notifySync("Syncing quotes with server...");
+
+    // 1. Fetch latest quotes from server
+    const serverQuotes = await fetchQuotesFromServer();
+
+    let updated = false;
+
+    // 2. Server takes precedence (conflict resolution)
+    serverQuotes.forEach(serverQuote => {
+      const exists = quotes.some(
+        localQuote => localQuote.text === serverQuote.text
+      );
+
+      if (!exists) {
+        quotes.push(serverQuote);
+        updated = true;
+      }
+    });
+
+    // 3. Persist updates locally
+    if (updated) {
+      saveQuotes();
+      populateCategories();
+      notifySync("Quotes synced successfully. Server data applied.");
+    } else {
+      notifySync("Quotes are already up to date.");
+    }
+
+    // 4. Push local state back to server (POST simulation)
+    sendQuotesToServer(quotes);
+
+  } catch (error) {
+    console.error("Sync failed:", error);
+    notifySync("Sync failed. Please try again.");
   }
 }
