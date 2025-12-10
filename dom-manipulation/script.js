@@ -423,6 +423,10 @@ async function syncWithServer() {
   }
 }
 
+// After syncing server quotes locally, push local state back to server
+sendQuotesToServer(quotes);
+
+
 // ===============================
 // Sync Using fetchQuotesFromServer
 // ===============================
@@ -493,3 +497,27 @@ function checkConflicts(serverQuotes) {
   );
 }
 
+// ===============================
+// Send Local Quotes to Server (POST Simulation)
+// ===============================
+async function sendQuotesToServer(quotesToSend) {
+  try {
+    const response = await fetch("https://jsonplaceholder.typicode.com/posts", {
+      method: "POST", // ✅ REQUIRED
+      headers: {
+        "Content-Type": "application/json" // ✅ REQUIRED
+      },
+      body: JSON.stringify({
+        quotes: quotesToSend,
+        syncedAt: new Date().toISOString()
+      })
+    });
+
+    const result = await response.json();
+    console.log("Quotes successfully sent to server:", result);
+    return result;
+  } catch (error) {
+    console.error("Failed to send quotes to server:", error);
+    return null;
+  }
+}
