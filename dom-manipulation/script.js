@@ -376,6 +376,25 @@ async function fetchServerQuotes() {
   }
 }
 
+// ===============================
+// Fetch Quotes From Server (REQUIRED)
+// ===============================
+async function fetchQuotesFromServer() {
+  try {
+    const response = await fetch("https://jsonplaceholder.typicode.com/posts");
+    const data = await response.json();
+
+    // Simulate server-side quotes
+    return data.slice(0, 5).map(post => ({
+      text: post.title,
+      category: "Server"
+    }));
+  } catch (error) {
+    console.error("Failed to fetch quotes from server:", error);
+    return [];
+  }
+}
+
 
 // ===============================
 // Sync Local Data with Server
@@ -404,11 +423,42 @@ async function syncWithServer() {
   }
 }
 
+// ===============================
+// Sync Using fetchQuotesFromServer
+// ===============================
+async function syncWithServer() {
+  const serverQuotes = await fetchQuotesFromServer();
+  if (!serverQuotes.length) return;
+
+  let updated = false;
+
+  serverQuotes.forEach(serverQuote => {
+    const exists = quotes.some(
+      localQuote => localQuote.text === serverQuote.text
+    );
+
+    // Server takes precedence
+    if (!exists) {
+      quotes.push(serverQuote);
+      updated = true;
+    }
+  });
+
+  if (updated) {
+    saveQuotes();
+    populateCategories();
+    notifySync("Quotes synced from server. Server data took precedence.");
+  }
+}
+
 
 // ===============================
 // Periodic Server Sync
 // ===============================
 setInterval(syncWithServer, SYNC_INTERVAL);
+
+setInterval(syncWithServer, 15000);
+
 
 
 // ===============================
@@ -442,3 +492,4 @@ function checkConflicts(serverQuotes) {
     quotes.some(localQuote => localQuote.text === serverQuote.text)
   );
 }
+
