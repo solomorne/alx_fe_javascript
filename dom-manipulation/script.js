@@ -348,3 +348,97 @@ if (savedCategory) {
     filterQuotes();
   }
 }
+
+
+// ===============================
+// Server Simulation Config
+// ===============================
+const SERVER_URL = "https://jsonplaceholder.typicode.com/posts";
+const SYNC_INTERVAL = 15000; // 15 seconds
+
+
+// ===============================
+// Fetch Quotes from Server
+// ===============================
+async function fetchServerQuotes() {
+  try {
+    const response = await fetch(SERVER_URL);
+    const data = await response.json();
+
+    // Simulate quotes coming from server
+    return data.slice(0, 5).map(post => ({
+      text: post.title,
+      category: "Server"
+    }));
+  } catch (error) {
+    console.error("Server fetch failed:", error);
+    return [];
+  }
+}
+
+
+// ===============================
+// Sync Local Data with Server
+// ===============================
+async function syncWithServer() {
+  const serverQuotes = await fetchServerQuotes();
+  if (serverQuotes.length === 0) return;
+
+  let conflictResolved = false;
+
+  serverQuotes.forEach(serverQuote => {
+    const exists = quotes.some(
+      localQuote => localQuote.text === serverQuote.text
+    );
+
+    if (!exists) {
+      quotes.push(serverQuote);
+      conflictResolved = true;
+    }
+  });
+
+  if (conflictResolved) {
+    saveQuotes();
+    populateCategories();
+    notifySync("Server updates synced. Conflicts resolved in favor of server.");
+  }
+}
+
+
+// ===============================
+// Periodic Server Sync
+// ===============================
+setInterval(syncWithServer, SYNC_INTERVAL);
+
+
+// ===============================
+// Sync Notification
+// ===============================
+function notifySync(message) {
+  const status = document.getElementById("syncStatus");
+  if (!status) return;
+
+  status.textContent = message;
+  status.style.color = "green";
+
+  setTimeout(() => {
+    status.textContent = "";
+  }, 5000);
+}
+
+// ===============================
+// Manual Sync (User Triggered)
+// ===============================
+function manualSync() {
+  notifySync("Manual sync in progress...");
+  syncWithServer();
+}
+
+// ===============================
+// View Possible Conflicts
+// ===============================
+function checkConflicts(serverQuotes) {
+  return serverQuotes.filter(serverQuote =>
+    quotes.some(localQuote => localQuote.text === serverQuote.text)
+  );
+}
