@@ -552,6 +552,21 @@ async function syncQuotes() {
       }
     });
 
+    // Display sync success message (required string)
+    console.log("Quotes synced with server!");
+    notifySync("Quotes synced with server!");
+
+
+    if (updated) {
+    saveQuotes();
+    populateCategories();
+
+    // REQUIRED: must contain this exact text
+    console.log("Quotes synced with server!");
+    notifySync("Quotes synced with server!");
+}
+
+
     // 3. Persist updates locally
     if (updated) {
       saveQuotes();
